@@ -12,6 +12,36 @@ body {
     color: #333;
 }
 
+/* Logo styling */
+.logo-container {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.logo-container:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.logo {
+    width: 80px;
+    height: auto;
+    display: block;
+}
+
+.logo-container a {
+    text-decoration: none;
+    display: block;
+}
+
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -369,6 +399,16 @@ body {
 
 /* Responsive design */
 @media (max-width: 768px) {
+    .logo-container {
+        top: 15px;
+        left: 15px;
+        padding: 8px;
+    }
+    
+    .logo {
+        width: 60px;
+    }
+    
     .container {
         padding: 15px;
     }
@@ -415,6 +455,16 @@ body {
 }
 
 @media (max-width: 480px) {
+    .logo-container {
+        top: 10px;
+        left: 10px;
+        padding: 6px;
+    }
+    
+    .logo {
+        width: 50px;
+    }
+    
     .input-section,
     .aqi-card,
     .map-section {
