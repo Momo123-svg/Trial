@@ -50,7 +50,12 @@
 
                 <div class="input-panel" id="map-panel">
                     <p class="map-instruction">Click on the map to select a location</p>
-                    <div id="input-map" class="input-map"></div>
+                    <div id="input-map" class="input-map">
+                        <div class="map-loading" id="map-loading">
+                            <div class="spinner"></div>
+                            <p>Loading map...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -126,6 +131,12 @@
         <div class="loading" id="loading" style="display: none;">
             <div class="spinner"></div>
             <p>Fetching air quality data...</p>
+        </div>
+
+        <div class="debug-section" style="text-align: center; margin: 20px 0;">
+            <button onclick="debugMaps()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 0.9rem;">
+                Debug Maps
+            </button>
         </div>
 
         <footer class="footer">

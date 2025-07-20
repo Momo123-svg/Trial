@@ -3,11 +3,58 @@ let inputMap, mainMap;
 let selectedLat = null, selectedLon = null;
 const API_KEY = 'demo'; // Using demo key - users should replace with actual OpenWeatherMap API key
 
+// Check if Leaflet is loaded
+function checkLeafletLoaded() {
+    return new Promise((resolve, reject) => {
+        let attempts = 0;
+        const maxAttempts = 50; // 5 seconds maximum wait
+        
+        const checkInterval = setInterval(() => {
+            attempts++;
+            
+            if (typeof L !== 'undefined') {
+                clearInterval(checkInterval);
+                resolve(true);
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                reject(new Error('Leaflet failed to load'));
+            }
+        }, 100);
+    });
+}
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     initializeTabs();
-    initializeInputMap();
     setupEventListeners();
+    
+    // Wait for Leaflet to load before initializing maps
+    checkLeafletLoaded()
+        .then(() => {
+            console.log('Leaflet loaded successfully');
+            // Initialize input map with a delay to ensure DOM is ready
+            setTimeout(() => {
+                initializeInputMap();
+            }, 100);
+        })
+        .catch((error) => {
+            console.error('Failed to load Leaflet:', error);
+            // Show error message in map containers
+            const containers = ['input-map', 'main-map'];
+            containers.forEach(containerId => {
+                const container = document.getElementById(containerId);
+                if (container) {
+                    container.innerHTML = `
+                        <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f8f9fa; border-radius: 15px; color: #666;">
+                            <div style="text-align: center;">
+                                <i class="fas fa-wifi" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                                <p>Map library failed to load.<br>Please check your internet connection and refresh.</p>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+        });
 });
 
 // Tab switching functionality
@@ -28,8 +75,14 @@ function initializeTabs() {
             document.getElementById(`${targetTab}-panel`).classList.add('active');
             
             // Initialize map if map tab is selected
-            if (targetTab === 'map' && !inputMap) {
-                setTimeout(() => initializeInputMap(), 100);
+            if (targetTab === 'map') {
+                setTimeout(() => {
+                    initializeInputMap();
+                    // Force map to resize/redraw
+                    if (inputMap) {
+                        inputMap.invalidateSize();
+                    }
+                }, 200);
             }
         });
     });
@@ -37,13 +90,34 @@ function initializeTabs() {
 
 // Initialize input map for location selection
 function initializeInputMap() {
-    if (inputMap) return;
+    const mapContainer = document.getElementById('input-map');
+    
+    // Check if container exists
+    if (!mapContainer) {
+        console.error('Map container not found');
+        return;
+    }
+    
+    // If map already exists, remove it first
+    if (inputMap) {
+        inputMap.remove();
+        inputMap = null;
+    }
     
     try {
+        console.log('Initializing input map...');
+        
+        // Check if Leaflet is loaded
+        if (typeof L === 'undefined') {
+            console.error('Leaflet library not loaded');
+            return;
+        }
+        
         inputMap = L.map('input-map').setView([28.6139, 77.2090], 10); // Default to Delhi
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 18
         }).addTo(inputMap);
         
         let marker = null;
@@ -61,8 +135,34 @@ function initializeInputMap() {
             // Automatically search when location is selected
             searchByCoordinates(selectedLat, selectedLon);
         });
+        
+        console.log('Input map initialized successfully');
+        
+        // Hide loading indicator
+        const loadingIndicator = document.getElementById('map-loading');
+        if (loadingIndicator) {
+            loadingIndicator.style.display = 'none';
+        }
+        
+        // Force resize after a short delay
+        setTimeout(() => {
+            if (inputMap) {
+                inputMap.invalidateSize();
+            }
+        }, 100);
+        
     } catch (error) {
         console.error('Error initializing input map:', error);
+        
+        // Show error message to user
+        mapContainer.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f8f9fa; border-radius: 15px; color: #666;">
+                <div style="text-align: center;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <p>Map failed to load. Please refresh the page.</p>
+                </div>
+            </div>
+        `;
     }
 }
 
@@ -355,15 +455,31 @@ function generateFunnyContent(aqi, status) {
 
 // Initialize main results map
 function initializeMainMap(lat, lon, aqi, locationName) {
+    const mapContainer = document.getElementById('main-map');
+    
+    if (!mapContainer) {
+        console.error('Main map container not found');
+        return;
+    }
+    
     if (mainMap) {
         mainMap.remove();
+        mainMap = null;
     }
     
     try {
+        console.log('Initializing main map...');
+        
+        if (typeof L === 'undefined') {
+            console.error('Leaflet library not loaded for main map');
+            return;
+        }
+        
         mainMap = L.map('main-map').setView([lat, lon], 12);
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 18
         }).addTo(mainMap);
         
         // Add main location marker
@@ -381,8 +497,26 @@ function initializeMainMap(lat, lon, aqi, locationName) {
         // Add some nearby demo points for visualization
         addNearbyAQIPoints(lat, lon);
         
+        console.log('Main map initialized successfully');
+        
+        // Force resize after a short delay
+        setTimeout(() => {
+            if (mainMap) {
+                mainMap.invalidateSize();
+            }
+        }, 100);
+        
     } catch (error) {
         console.error('Error initializing main map:', error);
+        
+        mapContainer.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f8f9fa; border-radius: 15px; color: #666;">
+                <div style="text-align: center;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <p>Map failed to load. Please refresh the page.</p>
+                </div>
+            </div>
+        `;
     }
 }
 
@@ -514,4 +648,45 @@ function showAPIKeyNotice() {
 // Show API notice on first load
 if (API_KEY === 'demo') {
     setTimeout(showAPIKeyNotice, 2000);
+}
+
+// Debug function to help troubleshoot map issues
+function debugMaps() {
+    console.log('=== MAP DEBUG INFO ===');
+    console.log('Leaflet loaded:', typeof L !== 'undefined');
+    console.log('Input map exists:', !!inputMap);
+    console.log('Main map exists:', !!mainMap);
+    
+    const inputMapContainer = document.getElementById('input-map');
+    const mainMapContainer = document.getElementById('main-map');
+    
+    console.log('Input map container exists:', !!inputMapContainer);
+    console.log('Main map container exists:', !!mainMapContainer);
+    
+    if (inputMapContainer) {
+        console.log('Input map container dimensions:', {
+            width: inputMapContainer.offsetWidth,
+            height: inputMapContainer.offsetHeight,
+            display: window.getComputedStyle(inputMapContainer).display
+        });
+    }
+    
+    if (mainMapContainer) {
+        console.log('Main map container dimensions:', {
+            width: mainMapContainer.offsetWidth,
+            height: mainMapContainer.offsetHeight,
+            display: window.getComputedStyle(mainMapContainer).display
+        });
+    }
+    
+    // Try to reinitialize input map
+    console.log('Attempting to reinitialize input map...');
+    try {
+        initializeInputMap();
+        console.log('Input map reinitialization completed');
+    } catch (error) {
+        console.error('Input map reinitialization failed:', error);
+    }
+    
+    alert('Debug info logged to console. Press F12 to view.');
 }
