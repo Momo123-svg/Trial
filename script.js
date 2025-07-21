@@ -313,7 +313,7 @@ async function fetchAQIData(lat, lon, locationName) {
 
 // Show demo data when API is not available
 function showDemoData(source, location) {
-    const demoAQI = Math.floor(Math.random() * 300) + 1; // Random AQI between 1-300
+    const demoAQI = Math.floor(Math.random() * 5) + 1; // Random AQI between 1-5 (OpenWeatherMap scale)
     const demoComponents = {
         pm2_5: (Math.random() * 100).toFixed(1),
         pm10: (Math.random() * 150).toFixed(1),
@@ -340,10 +340,12 @@ function showDemoData(source, location) {
 // Display AQI results
 function displayAQIResults(data) {
     document.getElementById('location-name').textContent = data.location;
-    document.getElementById('aqi-value').textContent = data.aqi;
+    
+    // Get AQI info with numeric value
+    const aqiInfo = getAQIInfo(data.aqi);
+    document.getElementById('aqi-value').textContent = aqiInfo.numericValue;
     
     // Set AQI color and status
-    const aqiInfo = getAQIInfo(data.aqi);
     const aqiValueElement = document.getElementById('aqi-value');
     const aqiStatusElement = document.getElementById('aqi-status');
     
@@ -360,7 +362,7 @@ function displayAQIResults(data) {
     document.getElementById('no2-value').textContent = `${data.components.no2} μg/m³`;
     
     // Generate funny content
-    generateFunnyContent(data.aqi, aqiInfo.status);
+    generateFunnyContent(aqiInfo.numericValue, aqiInfo.status);
     
     // Initialize main map
     initializeMainMap(data.coordinates.lat, data.coordinates.lon, data.aqi, data.location);
@@ -379,71 +381,81 @@ function displayAQIResults(data) {
 
 // Get AQI information based on value
 function getAQIInfo(aqi) {
+    // Convert OpenWeatherMap AQI (1-5) to US AQI scale (0-500)
+    let aqiValue, status, className, description;
+    
     if (aqi === 1) {
-        return {
-            status: 'Good',
-            class: 'aqi-good',
-            description: 'Air quality is considered satisfactory, and air pollution poses little or no risk.'
-        };
+        aqiValue = Math.floor(Math.random() * 50) + 1; // 1-50
+        status = 'Good';
+        className = 'aqi-good';
+        description = 'Air quality is considered satisfactory, and air pollution poses little or no risk.';
     } else if (aqi === 2) {
-        return {
-            status: 'Fair',
-            class: 'aqi-moderate',
-            description: 'Air quality is acceptable; however, there may be a moderate health concern for a very small number of people.'
-        };
+        aqiValue = Math.floor(Math.random() * 50) + 51; // 51-100
+        status = 'Moderate';
+        className = 'aqi-moderate';
+        description = 'Air quality is acceptable; however, there may be a moderate health concern for a very small number of people.';
     } else if (aqi === 3) {
-        return {
-            status: 'Moderate',
-            class: 'aqi-unhealthy-sensitive',
-            description: 'Members of sensitive groups may experience health effects. The general public is not likely to be affected.'
-        };
+        aqiValue = Math.floor(Math.random() * 50) + 101; // 101-150
+        status = 'Unhealthy for Sensitive Groups';
+        className = 'aqi-unhealthy-sensitive';
+        description = 'Members of sensitive groups may experience health effects. The general public is not likely to be affected.';
     } else if (aqi === 4) {
-        return {
-            status: 'Poor',
-            class: 'aqi-unhealthy',
-            description: 'Everyone may begin to experience health effects; members of sensitive groups may experience more serious health effects.'
-        };
+        aqiValue = Math.floor(Math.random() * 50) + 151; // 151-200
+        status = 'Unhealthy';
+        className = 'aqi-unhealthy';
+        description = 'Everyone may begin to experience health effects; members of sensitive groups may experience more serious health effects.';
     } else {
-        return {
-            status: 'Very Poor',
-            class: 'aqi-very-unhealthy',
-            description: 'Health warnings of emergency conditions. The entire population is more likely to be affected.'
-        };
+        aqiValue = Math.floor(Math.random() * 100) + 201; // 201-300
+        status = 'Very Unhealthy';
+        className = 'aqi-very-unhealthy';
+        description = 'Health warnings of emergency conditions. The entire population is more likely to be affected.';
     }
+    
+    return {
+        status: status,
+        class: className,
+        description: description,
+        numericValue: aqiValue
+    };
 }
 
 // Generate funny content based on AQI
-function generateFunnyContent(aqi, status) {
+function generateFunnyContent(aqiValue, status) {
     const funnyContent = document.getElementById('funny-content');
     let content = '';
     
-    if (aqi === 1) {
+    if (aqiValue <= 50) {
         content = `
             <p><strong>Congratulations!</strong> The air is so clean, you could probably bottle it and sell it as premium oxygen! 🌟</p>
+            <p><strong>AQI: ${aqiValue}</strong> - This is as good as it gets!</p>
             <p><strong>Recommended activity:</strong> Go outside and take the deepest breath of your life. Your lungs will thank you!</p>
             <p><strong>Fun fact:</strong> This air quality is rarer than finding a parking spot in downtown during rush hour!</p>
         `;
-    } else if (aqi === 2) {
+    } else if (aqiValue <= 100) {
         content = `
             <p><strong>Not bad!</strong> The air quality is like a decent pizza - not perfect, but definitely acceptable! 🍕</p>
+            <p><strong>AQI: ${aqiValue}</strong> - Moderate levels, but still breathable!</p>
             <p><strong>Recommended activity:</strong> Perfect weather for a jog, just don't expect to break any Olympic records.</p>
             <p><strong>Pro tip:</strong> This is as good as it gets in most cities. Enjoy it while it lasts!</p>
         `;
-    } else if (aqi === 3) {
+    } else if (aqiValue <= 150) {
         content = `
             <p><strong>Meh...</strong> The air quality is like your WiFi connection - works most of the time, but you notice when it doesn't! 📶</p>
+            <p><strong>AQI: ${aqiValue}</strong> - Getting into the yellow zone here!</p>
             <p><strong>Recommended activity:</strong> Indoor yoga or contemplating why you didn't move to the mountains yet.</p>
             <p><strong>Survival tip:</strong> If you're sensitive, maybe save the marathon training for another day.</p>
         `;
-    } else if (aqi === 4) {
+    } else if (aqiValue <= 200) {
         content = `
             <p><strong>Yikes!</strong> The air quality is like a bad relationship - everyone can see it's not good for you! 💔</p>
+            <p><strong>AQI: ${aqiValue}</strong> - Time to start taking this seriously!</p>
             <p><strong>Recommended activity:</strong> Netflix and chill (literally, stay inside and chill).</p>
             <p><strong>Bright side:</strong> Great excuse to avoid that outdoor team building event you didn't want to attend!</p>
         `;
     } else {
         content = `
             <p><strong>ABORT MISSION!</strong> The air quality is so bad, even the plants are wearing masks! 😷🌱</p>
+            <p><strong>AQI: ${aqiValue}</strong> - This is officially hazardous territory!</p>
             <p><strong>Recommended activity:</strong> Indoor meditation on why you chose to live here. Maybe online shopping for air purifiers?</p>
             <p><strong>Emergency kit:</strong> Masks, indoor plants, and a strong internet connection for house hunting in cleaner areas!</p>
             <p><strong>Fun fact:</strong> You're basically living in a real-life science experiment about human resilience!</p>
@@ -489,7 +501,7 @@ function initializeMainMap(lat, lon, aqi, locationName) {
         marker.bindPopup(`
             <div class="popup-aqi">
                 <div class="popup-location">${locationName}</div>
-                <div class="popup-aqi-value ${aqiInfo.class}">AQI: ${aqi}</div>
+                <div class="popup-aqi-value ${aqiInfo.class}">AQI: ${aqiInfo.numericValue}</div>
                 <div>${aqiInfo.status}</div>
             </div>
         `).openPopup();
@@ -549,7 +561,7 @@ function addNearbyAQIPoints(centerLat, centerLon) {
             fillOpacity: 0.6
         }).addTo(mainMap).bindPopup(`
             <div class="popup-aqi">
-                <div class="popup-aqi-value ${aqiInfo.class}">AQI: ${point.aqi}</div>
+                <div class="popup-aqi-value ${aqiInfo.class}">AQI: ${aqiInfo.numericValue}</div>
                 <div>${aqiInfo.status}</div>
             </div>
         `);
